@@ -1,1 +1,1 @@
-# training-actions
+# Training session on GitHub Actions
