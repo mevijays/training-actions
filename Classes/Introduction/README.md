@@ -101,3 +101,17 @@ The run keyword tells the job to execute a command on the runner. In this case, 
 
       - run: bats -v
 Finally, you'll run the bats command with a parameter that outputs the software version.
+
+## Folder structure
+
+```
+Example repository file structure:
+
+|-- hello-world (repository)
+|   |__ .github
+|       └── workflows
+|           └── my-first-workflow.yml
+|       └── actions
+|           |__ hello-world-action
+|               └── action.yml
+```
