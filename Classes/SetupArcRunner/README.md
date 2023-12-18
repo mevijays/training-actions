@@ -1,4 +1,6 @@
 # Actions runner controller deployment with kind cluster.
+### Kind installation
+ - Install the kind cluster with bellow config.yaml.
 ```yaml
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
@@ -41,21 +43,21 @@ networking:
   apiServerPort: 6443
 
 ```
-Install cert manager
+- Install cert manager
 
 ```yaml
 kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.12.1/cert-manager.yaml
 ```
-Now install the controller   
+- Now install the controller   
 ```yaml
 kubectl apply -f https://github.com/actions/actions-runner-controller/releases/download/v0.22.0/actions-runner-controller.yaml --server-side
 ```
-Now create github token with minimum repo admin permission and create a secret
+- Now create github token with minimum repo admin permission and create a secret
 
 ```yaml
 kubectl create secret generic controller-manager -n actions-runner-system --from-literal=github_token=ghp_xxxxkjkjdsd
 ```
-Now create runner config. i am creating dind runner here
+- Now create runner config. i am creating dind runner here
 
 ```yaml
 apiVersion: actions.summerwind.dev/v1alpha1
@@ -71,7 +73,7 @@ spec:
       dockerdWithinRunnerContainer: true
       labels: [ dind ]
 ```
-Deploy now
+- Deploy now!
 
 ```yaml
 kubectl apply -f ghrunner.yaml
