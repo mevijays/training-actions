@@ -16,7 +16,7 @@ jobs:
       - name: Git clone the repository
         uses: actions/checkout@v3
       - name: configure aws credentials
-        uses: aws-actions/configure-aws-credentials@v1.7.0
+        uses: aws-actions/configure-aws-credentials@v4.1.0
         with:
           role-to-assume: arn:aws:iam::867162103000:role/githubactions #change to reflect your IAM role’s ARN
           aws-region: ${{ env.AWS_REGION }}
