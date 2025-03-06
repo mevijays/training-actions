@@ -1,4 +1,4 @@
-region                         = "us-west-2"
+region                         = "us-east-1"
 vpc_id                         = "vpc-0123456789abcdef0"
 private_subnet_names           = ["private-subnet-a", "private-subnet-b"]
 public_subnet_names            = ["public-subnet-a", "public-subnet-b"]
