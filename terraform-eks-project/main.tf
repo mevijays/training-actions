@@ -48,9 +48,9 @@ data "aws_subnets" "public" {
 }
 
 locals {
-  # Safely handle the potential empty data sources
-  private_subnet_ids = var.use_existing_vpc && length(data.aws_subnets.private) > 0 ? toset(data.aws_subnets.private[0].ids) : []
-  public_subnet_ids = var.use_existing_vpc && length(data.aws_subnets.public) > 0 ? toset(data.aws_subnets.public[0].ids) : []
+  # Properly handle the data sources with toset()
+  private_subnet_ids = var.use_existing_vpc && length(data.aws_subnets.private) > 0 && length(data.aws_subnets.private[0].ids) > 0 ? toset(data.aws_subnets.private[0].ids) : toset([])
+  public_subnet_ids = var.use_existing_vpc && length(data.aws_subnets.public) > 0 && length(data.aws_subnets.public[0].ids) > 0 ? toset(data.aws_subnets.public[0].ids) : toset([])
 }
 
 # Add required Kubernetes tags to existing subnets if using existing VPC

@@ -4,21 +4,6 @@ variable "region" {
   default     = "us-west-2"
 }
 
-variable "vpc_id" {
-  description = "ID of the existing VPC"
-  type        = string
-}
-
-variable "private_subnet_names" {
-  description = "Names of private subnets in the existing VPC"
-  type        = list(string)
-}
-
-variable "public_subnet_names" {
-  description = "Names of public subnets in the existing VPC"
-  type        = list(string)
-}
-
 variable "cluster_name" {
   description = "Name of the EKS cluster"
   type        = string
@@ -31,16 +16,34 @@ variable "cluster_version" {
   default     = "1.28"
 }
 
-variable "cluster_endpoint_public_access" {
-  description = "Whether the EKS cluster endpoint is publicly accessible"
+variable "use_existing_vpc" {
+  description = "Whether to use an existing VPC"
   type        = bool
-  default     = true
+  default     = false
+}
+
+variable "vpc_id" {
+  description = "ID of the existing VPC (only needed if use_existing_vpc = true)"
+  type        = string
+  default     = ""
+}
+
+variable "private_subnet_names" {
+  description = "Names of private subnets in the existing VPC (only needed if use_existing_vpc = true)"
+  type        = list(string)
+  default     = []
+}
+
+variable "public_subnet_names" {
+  description = "Names of public subnets in the existing VPC (only needed if use_existing_vpc = true)"
+  type        = list(string)
+  default     = []
 }
 
 variable "node_group_name" {
   description = "Name of the EKS node group"
   type        = string
-  default     = "node-group-1"
+  default     = "default-node-group"
 }
 
 variable "instance_types" {
@@ -52,13 +55,13 @@ variable "instance_types" {
 variable "min_size" {
   description = "Minimum number of nodes in the node group"
   type        = number
-  default     = 1
+  default     = 2
 }
 
 variable "max_size" {
   description = "Maximum number of nodes in the node group"
   type        = number
-  default     = 3
+  default     = 4
 }
 
 variable "desired_size" {
@@ -67,8 +70,8 @@ variable "desired_size" {
   default     = 2
 }
 
-variable "use_existing_vpc" {
-  description = "Whether to use an existing VPC"
+variable "cluster_endpoint_public_access" {
+  description = "Whether the EKS cluster endpoint is publicly accessible"
   type        = bool
-  default     = false
+  default     = true
 }
