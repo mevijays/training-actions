@@ -3,13 +3,10 @@ on:
   workflow_dispatch:
     inputs:
       destroy:
-        description: 'Destroy resources?'
+        description: 'Check to destroy resources'
         required: true
         default: 'false'
-        type: choice
-        options:
-          - 'true'
-          - 'false'
+        type: boolean  # This will create a checkbox in the UI
 env:
   AWS_REGION : "us-east-1"
 permissions:
