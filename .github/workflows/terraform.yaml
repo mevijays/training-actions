@@ -1,6 +1,15 @@
 name: terraform run
 on:
   workflow_dispatch:
+    inputs:
+      destroy:
+        description: 'Destroy resources?'
+        required: true
+        default: 'false'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
 env:
   AWS_REGION : "us-east-1"
 permissions:
@@ -32,4 +41,11 @@ jobs:
         run: terraform plan
 
       - name: Terraform Apply
-        run: terraform apply -auto-approve
+        run: |
+          if [ "${{ github.event.inputs.destroy }}" == "true" ]; then
+            echo "Destroying resources..."
+            terraform apply -auto-approve -destroy
+          else
+            echo "Applying changes..."
+            terraform apply -auto-approve
+          fi
