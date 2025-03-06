@@ -48,9 +48,16 @@ data "aws_subnets" "public" {
 }
 
 locals {
-  # Properly handle the data sources with toset()
-  private_subnet_ids = var.use_existing_vpc && length(data.aws_subnets.private) > 0 && length(data.aws_subnets.private[0].ids) > 0 ? toset(data.aws_subnets.private[0].ids) : toset([])
-  public_subnet_ids = var.use_existing_vpc && length(data.aws_subnets.public) > 0 && length(data.aws_subnets.public[0].ids) > 0 ? toset(data.aws_subnets.public[0].ids) : toset([])
+  # Safely access data sources
+  private_subnet_ids = (var.use_existing_vpc && 
+                        length(data.aws_subnets.private) > 0) ? 
+                        toset(data.aws_subnets.private[0].ids) : 
+                        toset([])
+                        
+  public_subnet_ids = (var.use_existing_vpc && 
+                       length(data.aws_subnets.public) > 0) ? 
+                       toset(data.aws_subnets.public[0].ids) : 
+                       toset([])
 }
 
 # Add required Kubernetes tags to existing subnets if using existing VPC
@@ -117,8 +124,13 @@ module "eks" {
   cluster_name    = var.cluster_name
   cluster_version = var.cluster_version
 
-  vpc_id     = var.use_existing_vpc ? var.vpc_id : module.vpc[0].vpc_id
-  subnet_ids = var.use_existing_vpc ? (length(local.private_subnet_ids) > 0 ? local.private_subnet_ids : []) : module.vpc[0].private_subnets
+  # Safely determine what VPC ID to use
+  vpc_id = var.use_existing_vpc ? var.vpc_id : module.vpc[0].vpc_id
+  
+  # Safely determine what subnet IDs to use
+  subnet_ids = var.use_existing_vpc ? (
+    length(local.private_subnet_ids) > 0 ? local.private_subnet_ids : []
+  ) : module.vpc[0].private_subnets
 
   cluster_endpoint_public_access = var.cluster_endpoint_public_access
 
