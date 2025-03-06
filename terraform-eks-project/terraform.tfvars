@@ -1,0 +1,9 @@
+region = "us-west-2"
+create_new_vpc = true
+vpc_cidr = "10.0.0.0/16"
+public_subnet_cidrs = ["10.0.1.0/24"]
+eks_cluster_name = "my-eks-cluster"
+eks_node_group_name = "my-node-group"
+eks_node_instance_type = "t3.medium"
+eks_desired_capacity = 2
+ecr_repository_name = "my-ecr-repo"
