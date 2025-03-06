@@ -1,21 +1,34 @@
 resource "aws_ecr_repository" "this" {
-  name                 = var.repository_name
+  name                 = "${var.project_name}-repo"
   image_tag_mutability = "MUTABLE"
-  lifecycle_policy {
-    rule {
-      rule_priority = 1
-      description   = "Expire untagged images older than 30 days"
-      selection {
-        tag_status = "UNTAGGED"
-        count_type = "since-image-pushed"
-        count_unit = "days"
-        count_number = 30
-      }
-      action {
-        type = "expire"
+
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+}
+
+resource "aws_ecr_lifecycle_policy" "this" {
+  repository = aws_ecr_repository.this.name
+
+  policy = <<EOF
+{
+  "rules": [
+    {
+      "rulePriority": 1,
+      "description": "Keep last 30 days of images",
+      "selection": {
+        "tagStatus": "any",
+        "countType": "sinceImagePushed",
+        "countUnit": "days",
+        "countNumber": 30
+      },
+      "action": {
+        "type": "expire"
       }
     }
-  }
+  ]
+}
+EOF
 }
 
 output "repository_url" {

@@ -19,9 +19,11 @@ resource "aws_subnet" "public" {
 }
 
 output "vpc_id" {
-  value = aws_vpc.this.id
+  description = "The ID of the VPC"
+  value = var.create_new_vpc ? aws_vpc.this[0].id : var.existing_vpc_id
 }
 
-output "public_subnet_ids" {
-  value = aws_subnet.public[*].id
+output "subnet_ids" {
+  description = "The IDs of the subnets"
+  value = var.create_new_vpc ? [aws_subnet.public[0].id] : var.existing_subnet_ids
 }

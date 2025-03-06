@@ -10,15 +10,18 @@ resource "aws_eks_cluster" "this" {
 }
 
 output "cluster_name" {
-  value = aws_eks_cluster.this.name
+  description = "Name of the EKS cluster"
+  value       = aws_eks_cluster.this.name
 }
 
 output "cluster_endpoint" {
-  value = aws_eks_cluster.this.endpoint
+  description = "Endpoint for EKS control plane"
+  value       = aws_eks_cluster.this.endpoint
 }
 
-output "cluster_certificate_authority_data" {
-  value = aws_eks_cluster.this.certificate_authority[0].data
+output "kubeconfig_certificate_authority_data" {
+  description = "Certificate authority data for the EKS cluster"
+  value       = aws_eks_cluster.this.certificate_authority[0].data
 }
 
 output "cluster_id" {
