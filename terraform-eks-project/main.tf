@@ -2,42 +2,140 @@ provider "aws" {
   region = var.region
 }
 
+data "aws_availability_zones" "available" {}
+
+# Data sources for existing VPC
+data "aws_vpc" "existing" {
+  count = var.use_existing_vpc ? 1 : 0
+  id    = var.vpc_id
+}
+
+data "aws_subnets" "private" {
+  count = var.use_existing_vpc ? 1 : 0
+  filter {
+    name   = "vpc-id"
+    values = [var.vpc_id]
+  }
+  filter {
+    name   = "tag:Name"
+    values = var.private_subnet_names
+  }
+}
+
+data "aws_subnets" "public" {
+  count = var.use_existing_vpc ? 1 : 0
+  filter {
+    name   = "vpc-id"
+    values = [var.vpc_id]
+  }
+  filter {
+    name   = "tag:Name"
+    values = var.public_subnet_names
+  }
+}
+
+# Add required Kubernetes tags to existing subnets if using existing VPC
+resource "aws_ec2_tag" "private_subnet_cluster_tag" {
+  for_each    = var.use_existing_vpc ? toset(data.aws_subnets.private[0].ids) : []
+  resource_id = each.value
+  key         = "kubernetes.io/cluster/${var.cluster_name}"
+  value       = "shared"
+}
+
+resource "aws_ec2_tag" "private_subnet_elb_tag" {
+  for_each    = var.use_existing_vpc ? toset(data.aws_subnets.private[0].ids) : []
+  resource_id = each.value
+  key         = "kubernetes.io/role/internal-elb"
+  value       = "1"
+}
+
+resource "aws_ec2_tag" "public_subnet_cluster_tag" {
+  for_each    = var.use_existing_vpc ? toset(data.aws_subnets.public[0].ids) : []
+  resource_id = each.value
+  key         = "kubernetes.io/cluster/${var.cluster_name}"
+  value       = "shared"
+}
+
+resource "aws_ec2_tag" "public_subnet_elb_tag" {
+  for_each    = var.use_existing_vpc ? toset(data.aws_subnets.public[0].ids) : []
+  resource_id = each.value
+  key         = "kubernetes.io/role/elb"
+  value       = "1"
+}
+
+# Create a new VPC if not using existing VPC
 module "vpc" {
-  source = "./modules/vpc"
-  create_new_vpc = var.create_new_vpc
-  vpc_cidr = var.vpc_cidr
-  subnet_cidr = var.subnet_cidr
-  availability_zone = var.availability_zone
-  project_name = var.project_name
-  existing_vpc_id = var.existing_vpc_id
-  existing_subnet_ids = var.existing_subnet_ids
+  count   = var.use_existing_vpc ? 0 : 1
+  source  = "terraform-aws-modules/vpc/aws"
+  version = "~> 5.0"
+
+  name = "eks-vpc"
+  cidr = "10.0.0.0/16"
+
+  azs             = slice(data.aws_availability_zones.available.names, 0, 2)
+  private_subnets = ["10.0.1.0/24", "10.0.2.0/24"]
+  public_subnets  = ["10.0.3.0/24", "10.0.4.0/24"]
+
+  enable_nat_gateway   = true
+  single_nat_gateway   = true
+  enable_dns_hostnames = true
+
+  public_subnet_tags = {
+    "kubernetes.io/cluster/${var.cluster_name}" = "shared"
+    "kubernetes.io/role/elb"                    = "1"
+  }
+
+  private_subnet_tags = {
+    "kubernetes.io/cluster/${var.cluster_name}" = "shared"
+    "kubernetes.io/role/internal-elb"           = "1"
+  }
 }
 
 module "eks" {
-  source = "./modules/eks"
-  cluster_name = var.cluster_name
-  vpc_id = module.vpc.vpc_id
-  subnet_ids = module.vpc.subnet_ids
-  node_instance_type = var.node_instance_type
-  desired_capacity = var.desired_capacity
-  max_size = var.max_size
-  min_size = var.min_size
-  project_name = var.project_name
+  source  = "terraform-aws-modules/eks/aws"
+  version = "~> 19.0"
+
+  cluster_name    = var.cluster_name
+  cluster_version = var.cluster_version
+
+  vpc_id     = var.use_existing_vpc ? var.vpc_id : module.vpc[0].vpc_id
+  subnet_ids = var.use_existing_vpc ? data.aws_subnets.private[0].ids : module.vpc[0].private_subnets
+
+  cluster_endpoint_public_access = var.cluster_endpoint_public_access
+
+  eks_managed_node_group_defaults = {
+    ami_type = "AL2_x86_64"
+  }
+
+  eks_managed_node_groups = {
+    default = {
+      name = var.node_group_name
+
+      instance_types = var.instance_types
+
+      min_size     = var.min_size
+      max_size     = var.max_size
+      desired_size = var.desired_size
+    }
+  }
 }
 
-module "ecr" {
-  source = "./modules/ecr"
-  project_name = var.project_name
+output "cluster_endpoint" {
+  description = "Endpoint for EKS control plane"
+  value       = module.eks.cluster_endpoint
 }
 
-output "eks_cluster_endpoint" {
-  value = module.eks.cluster_endpoint
+output "cluster_security_group_id" {
+  description = "Security group ID attached to the EKS cluster"
+  value       = module.eks.cluster_security_group_id
 }
 
-output "vpc_id" {
-  value = module.vpc.vpc_id
+output "region" {
+  description = "AWS region"
+  value       = var.region
 }
 
-output "ecr_repository_url" {
-  value = module.ecr.repository_url
+output "cluster_name" {
+  description = "Kubernetes Cluster Name"
+  value       = module.eks.cluster_name
 }
