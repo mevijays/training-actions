@@ -49,28 +49,28 @@ data "aws_subnets" "public" {
 
 # Add required Kubernetes tags to existing subnets if using existing VPC
 resource "aws_ec2_tag" "private_subnet_cluster_tag" {
-  for_each    = var.use_existing_vpc ? toset(data.aws_subnets.private[0].ids) : []
+  for_each    = var.use_existing_vpc && length(data.aws_subnets.private[0].ids) > 0 ? toset(data.aws_subnets.private[0].ids) : []
   resource_id = each.value
   key         = "kubernetes.io/cluster/${var.cluster_name}"
   value       = "shared"
 }
 
 resource "aws_ec2_tag" "private_subnet_elb_tag" {
-  for_each    = var.use_existing_vpc ? toset(data.aws_subnets.private[0].ids) : []
+  for_each    = var.use_existing_vpc && length(data.aws_subnets.private[0].ids) > 0 ? toset(data.aws_subnets.private[0].ids) : []
   resource_id = each.value
   key         = "kubernetes.io/role/internal-elb"
   value       = "1"
 }
 
 resource "aws_ec2_tag" "public_subnet_cluster_tag" {
-  for_each    = var.use_existing_vpc ? toset(data.aws_subnets.public[0].ids) : []
+  for_each    = var.use_existing_vpc && length(data.aws_subnets.public[0].ids) > 0 ? toset(data.aws_subnets.public[0].ids) : []
   resource_id = each.value
   key         = "kubernetes.io/cluster/${var.cluster_name}"
   value       = "shared"
 }
 
 resource "aws_ec2_tag" "public_subnet_elb_tag" {
-  for_each    = var.use_existing_vpc ? toset(data.aws_subnets.public[0].ids) : []
+  for_each    = var.use_existing_vpc && length(data.aws_subnets.public[0].ids) > 0 ? toset(data.aws_subnets.public[0].ids) : []
   resource_id = each.value
   key         = "kubernetes.io/role/elb"
   value       = "1"
