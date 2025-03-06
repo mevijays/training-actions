@@ -47,30 +47,36 @@ data "aws_subnets" "public" {
   }
 }
 
+locals {
+  # Safely handle the potential empty data sources
+  private_subnet_ids = var.use_existing_vpc && length(data.aws_subnets.private) > 0 ? toset(data.aws_subnets.private[0].ids) : []
+  public_subnet_ids = var.use_existing_vpc && length(data.aws_subnets.public) > 0 ? toset(data.aws_subnets.public[0].ids) : []
+}
+
 # Add required Kubernetes tags to existing subnets if using existing VPC
 resource "aws_ec2_tag" "private_subnet_cluster_tag" {
-  for_each    = var.use_existing_vpc && length(data.aws_subnets.private[0].ids) > 0 ? toset(data.aws_subnets.private[0].ids) : []
+  for_each    = local.private_subnet_ids
   resource_id = each.value
   key         = "kubernetes.io/cluster/${var.cluster_name}"
   value       = "shared"
 }
 
 resource "aws_ec2_tag" "private_subnet_elb_tag" {
-  for_each    = var.use_existing_vpc && length(data.aws_subnets.private[0].ids) > 0 ? toset(data.aws_subnets.private[0].ids) : []
+  for_each    = local.private_subnet_ids
   resource_id = each.value
   key         = "kubernetes.io/role/internal-elb"
   value       = "1"
 }
 
 resource "aws_ec2_tag" "public_subnet_cluster_tag" {
-  for_each    = var.use_existing_vpc && length(data.aws_subnets.public[0].ids) > 0 ? toset(data.aws_subnets.public[0].ids) : []
+  for_each    = local.public_subnet_ids
   resource_id = each.value
   key         = "kubernetes.io/cluster/${var.cluster_name}"
   value       = "shared"
 }
 
 resource "aws_ec2_tag" "public_subnet_elb_tag" {
-  for_each    = var.use_existing_vpc && length(data.aws_subnets.public[0].ids) > 0 ? toset(data.aws_subnets.public[0].ids) : []
+  for_each    = local.public_subnet_ids
   resource_id = each.value
   key         = "kubernetes.io/role/elb"
   value       = "1"
@@ -112,7 +118,7 @@ module "eks" {
   cluster_version = var.cluster_version
 
   vpc_id     = var.use_existing_vpc ? var.vpc_id : module.vpc[0].vpc_id
-  subnet_ids = var.use_existing_vpc ? data.aws_subnets.private[0].ids : module.vpc[0].private_subnets
+  subnet_ids = var.use_existing_vpc ? (length(local.private_subnet_ids) > 0 ? local.private_subnet_ids : []) : module.vpc[0].private_subnets
 
   cluster_endpoint_public_access = var.cluster_endpoint_public_access
 
