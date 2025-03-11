@@ -8,8 +8,16 @@
 
 Next action is to create a role with any name and provide required policies for the required access. NOTE: this is the role arn which github actions will use to login and access resources in aws account.
 
+### Creating a role
+- Select ``role`` option in IAM
+- Select as ``create role`` and select web identityas ``trusted entity type``
+- In **web identity** drop down select the identity you have created as ``token.actions.githubusercontent.com``
+- In Audience drop down select as ``sts.amazonaws.com``
+- Now in GitHub orgnization type the org name. repo name is optional only select if you want only one repo to be able to connect to aws. If only org is selected, all repo will have access to aws auth.
+- Click on next button and select a policy ( custom policy or any existing)
+- For lab purpose i am using ``AdministratorAccess`` which is not a secure and provides full account access.
 
-Example of actions workflow:-
+**Example of actions workflow:-**
 ```yaml
 name: aws role auth
 on:
