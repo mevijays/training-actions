@@ -1,0 +1,52 @@
+persistence:
+  enabled: true
+replicas: 1
+resources:
+  requests:
+    cpu: 100m
+    memory: 1Gi
+logstashConfig:
+  logstash.yml: |
+    http.host: 0.0.0.0
+    # Enable environment variable interpolation
+    config.support_escapes: true
+
+extraEnvs: 
+  - name: ELASTICSEARCH_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: elasticsearch-master-credentials
+        key: password
+  - name: ELASTICSEARCH_USERNAME
+    value: "elastic"  # This is fixed in the Elasticsearch Helm chart
+
+logstashPipeline:
+  logstash.conf: |
+    input {
+      beats {
+        port => 5044
+      }
+    }
+    output {
+      elasticsearch {
+        hosts => "https://elasticsearch-master:9200"
+        manage_template => false
+        ssl_certificate_verification => false
+        index => "%{[@metadata][beat]}-%{+YYYY.MM.dd}"
+        document_type => "%{[@metadata][type]}"
+        user => "elastic"
+        password => "${ELASTICSEARCH_PASSWORD}"
+      }
+    }
+
+service:
+  type: ClusterIP
+  ports:
+    - name: beats
+      port: 5044
+      protocol: TCP
+      targetPort: 5044
+    - name: http
+      port: 8080
+      protocol: TCP
+      targetPort: 8080

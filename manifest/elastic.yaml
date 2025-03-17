@@ -1,0 +1,10 @@
+resources:
+  requests:
+    cpu: 100m
+    memory: 1Gi
+replicas: 1
+minimumMasterNodes: 
+volumeClaimTemplate:
+  resources:
+    requests:
+      storage: 5Gi

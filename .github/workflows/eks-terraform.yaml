@@ -1,0 +1,53 @@
+name: EKS Terraform Deployment
+
+on: 
+  workflow_dispatch:
+    inputs:
+      destroy:
+        description: 'Destroy infrastructure'
+        required: true
+        default: false
+        type: boolean
+env:
+  aws_gh_role: "arn:aws:iam::430118834478:role/gh-actions-role"
+  aws_region: "us-east-1" 
+permissions:
+      id-token: write   
+      contents: read    
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./tf-aws-eks
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: configure aws credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ env.aws_gh_role }}
+        aws-region: ${{ env.aws_region }}
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: '1.10.0'
+
+    - name: Terraform Init
+      run: terraform init
+
+    - name: Terraform Plan
+      run: terraform plan -no-color
+
+    - name: Terraform Apply or Destroy
+      run: |
+        if [[ "${{ github.event.inputs.destroy }}" == "true" ]]; then
+          echo "Destroying infrastructure..."
+          terraform apply -auto-approve -destroy
+        else
+          echo "Applying infrastructure..."
+          terraform apply -auto-approve
+        fi

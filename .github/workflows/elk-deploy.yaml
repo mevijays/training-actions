@@ -1,0 +1,44 @@
+name: ELK deployment
+
+on: 
+  workflow_dispatch:
+env:
+  aws_gh_role: "arn:aws:iam::430118834478:role/gh-actions-role"
+  aws_region: "us-east-1" 
+permissions:
+      id-token: write   
+      contents: read    
+jobs:
+  elk-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: configure aws credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ env.aws_gh_role }}
+        aws-region: ${{ env.aws_region }}
+    - name: get eks credential 
+      run: aws eks update-kubeconfig --name eks-prod --region us-east-1 
+    - name: deploying elasticsearch
+      run: |
+        helm upgrade --install elasticsearch elasticsearch \
+        --repo=https://helm.elastic.co -f manifest/elastic.yaml -n logging --create-namespace
+    - name: Deploying LogStash
+      run: |
+        helm upgrade --install logstash logstash \
+        --repo=https://helm.elastic.co  -f manifest/logstash.yaml -n logging
+    - name: Deploying File beat
+      run: |
+        helm upgrade --install filebeat filebeat \
+        --repo=https://helm.elastic.co -f manifest/filebeat.yaml -n logging
+    - name: Deploying Kibana
+      run: |
+        helm upgrade --install kibana kibana \
+        --repo=https://helm.elastic.co -f manifest/kibana.yaml -n logging
+    - name: kibana public service as LoadBalancer
+      run: |
+        kubectl apply -f manifest/svc-kibana.yaml -n logging

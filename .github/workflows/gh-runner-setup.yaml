@@ -1,0 +1,39 @@
+name: Setup GH Runner scale set
+
+on: 
+  workflow_dispatch:
+env:
+  aws_gh_role: "arn:aws:iam::430118834478:role/gh-actions-role"
+  aws_region: "us-east-1"
+  gh_org_url: "https://github.com/tcslabsfjbs"
+permissions:
+      id-token: write   
+      contents: read    
+jobs:
+  gh-runner-setup:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: configure aws credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ env.aws_gh_role }}
+        aws-region: ${{ env.aws_region }}
+    - name: get eks credential 
+      run: aws eks update-kubeconfig --name eks-prod --region us-east-1 
+    - name: kubectl command
+      run: |
+        helm upgrade --install arc \
+         --namespace arc-systems \
+         --create-namespace \
+         oci://ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set-controller
+        helm upgrade --install arc-runner-set \
+          --namespace arc-runners \
+          --create-namespace \
+          --set githubConfigUrl=${{ env.gh_org_url }} \
+          --set githubConfigSecret.github_token="${{ secrets.GH_PAT }}" \
+          oci://ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set
+        sleep 10 && kubectl get po -A       
