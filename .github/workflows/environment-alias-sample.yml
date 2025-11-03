@@ -15,12 +15,16 @@ on:
 
 jobs:
   showcase-env-alias:
-    runs-on: ubuntu-latest
+    runs-on:
+      group: ${{ fromJson('{"dev":"dev-runners","uat":"uat-runners","prod":"prd-runners"}')[github.event.inputs.environment] }}
+      labels: arch-runners-${{ github.repository_owner }}
     steps:
       - name: Set ENVSA alias
         run: |
           echo "ENVSA=${{ fromJson('{"dev":"gke-dev","uat":"gke-uat","prod":"prd-gke"}')[github.event.inputs.environment] }}" >> "$GITHUB_ENV"
+          echo "RUNNER_GROUP=${{ fromJson('{"dev":"dev-runners","uat":"uat-runners","prod":"prd-runners"}')[github.event.inputs.environment] }}" >> "$GITHUB_ENV"
       - name: Display selected values
         run: |
           echo "Environment input: ${{ github.event.inputs.environment }}"
           echo "ENVSA value: $ENVSA"
+          echo "Runner group: $RUNNER_GROUP"
