@@ -18,7 +18,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Set ENVSA alias
-        run: echo "ENVSA=${{ fromJson('{\"dev\":\"gke-dev\",\"uat\":\"gke-uat\",\"prod\":\"prd-gke\"}')[github.event.inputs.environment] }}" >> "$GITHUB_ENV"
+        run: |
+          echo "ENVSA=${{ fromJson('{"dev":"gke-dev","uat":"gke-uat","prod":"prd-gke"}')[github.event.inputs.environment] }}" >> "$GITHUB_ENV"
       - name: Display selected values
         run: |
           echo "Environment input: ${{ github.event.inputs.environment }}"
