@@ -1,0 +1,25 @@
+name: Manual Environment Alias Demo
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        required: true
+        default: dev
+        type: choice
+        options:
+          - dev
+          - uat
+          - prod
+
+jobs:
+  showcase-env-alias:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set ENVSA alias
+        run: echo "ENVSA=${{ fromJson('{\"dev\":\"gke-dev\",\"uat\":\"gke-uat\",\"prod\":\"prd-gke\"}')[github.event.inputs.environment] }}" >> "$GITHUB_ENV"
+      - name: Display selected values
+        run: |
+          echo "Environment input: ${{ github.event.inputs.environment }}"
+          echo "ENVSA value: $ENVSA"
